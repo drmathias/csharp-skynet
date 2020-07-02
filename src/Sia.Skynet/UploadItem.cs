@@ -9,10 +9,19 @@ namespace Sia.Skynet
     /// </summary>
     public class UploadItem
     {
+        /// <summary>
+        /// File to upload
+        /// </summary>
         public IFileInfo FileInfo { get; }
 
+        /// <summary>
+        /// The desired Skynet file path, which if unspecified will be set to the file name
+        /// </summary>
         public string SkynetPath { get; }
 
+        /// <summary>
+        /// MIME type of the file, which if not specified will be automatically mapped
+        /// </summary>
         public MediaTypeHeaderValue ContentType { get; }
 
         /// <summary>
@@ -21,8 +30,8 @@ namespace Sia.Skynet
         /// <param name="fileInfo">File to upload</param>
         /// <param name="skynetPath">The desired Skynet file path, which if unspecified will be set to the file name</param>
         /// <param name="contentType">MIME type of the file, which if not specified will be automatically mapped</param>
-        /// <exception cref="ArgumentNullException"><see cref="fileInfo" /> is a null reference</exception>
-        /// <exception cref="ArgumentException"><see cref="fileInfo" /> represents a directory or is of type <see cref="NotFoundFileInfo"/></exception>
+        /// <exception cref="ArgumentNullException"><paramref name="fileInfo"/> is a null reference</exception>
+        /// <exception cref="ArgumentException"><paramref name="fileInfo"/> represents a directory or is of type <see cref="NotFoundFileInfo"/></exception>
         public UploadItem(IFileInfo fileInfo, string skynetPath = null, MediaTypeHeaderValue contentType = null)
         {
             if (fileInfo is null)

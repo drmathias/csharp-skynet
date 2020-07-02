@@ -9,16 +9,18 @@ using System.Threading.Tasks;
 
 namespace Sia.Skynet
 {
-    ///<inheritdoc/>
+    /// <inheritdoc/>
     public class SkynetWebPortal : ISkynetWebPortal
     {
         private readonly HttpClient _httpClient;
 
+        /// <inheritdoc/>
         public SkynetWebPortal(HttpClient httpClient)
         {
             _httpClient = httpClient;
         }
 
+        /// <inheritdoc/>
         public async Task<HttpContent> DownloadFile(string skylink, string path = "")
         {
             if (skylink is null)
@@ -41,6 +43,7 @@ namespace Sia.Skynet
             return response.Content;
         }
 
+        /// <inheritdoc/>
         public async Task<UploadResponse> UploadFiles(string fileName, IEnumerable<UploadItem> items)
         {
             if (fileName is null)

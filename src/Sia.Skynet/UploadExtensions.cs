@@ -10,6 +10,7 @@ namespace Sia.Skynet
         /// <summary>
         /// Uploads a file to Sia Skynet
         /// </summary>
+        /// <param name="skynetWebportal"></param>
         /// <param name="item">The item to upload</param>
         /// <returns>The response from the webportal</returns>
         public static Task<UploadResponse> UploadFile(this ISkynetWebPortal skynetWebportal, UploadItem item)
