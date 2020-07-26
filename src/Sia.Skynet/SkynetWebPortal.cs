@@ -12,6 +12,12 @@ namespace Sia.Skynet
     /// <inheritdoc/>
     public class SkynetWebPortal : ISkynetWebPortal
     {
+        private readonly JsonSerializerOptions _jsonSerializerOptions =
+            new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
         private readonly HttpClient _httpClient;
 
         /// <inheritdoc/>
@@ -82,7 +88,9 @@ namespace Sia.Skynet
 
             var response = await _httpClient.PostAsync($"/skynet/skyfile?filename={fileName}", multiPartContent);
             response.EnsureSuccessStatusCode();
-            return JsonSerializer.Deserialize<UploadResponse>(await response.Content.ReadAsStringAsync());
+            return await JsonSerializer.DeserializeAsync<UploadResponse>(
+                await response.Content.ReadAsStreamAsync(),
+                _jsonSerializerOptions);
         }
     }
 }
