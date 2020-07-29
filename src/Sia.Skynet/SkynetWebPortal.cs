@@ -44,7 +44,7 @@ namespace Sia.Skynet
                 throw new ArgumentException("Text must be 46 bytes long", nameof(skylink));
             }
 
-            var response = await _httpClient.GetAsync($"{skylink}{(!string.IsNullOrEmpty(path) ? "/" : "")}{path.TrimStart('/')}");
+            var response = await _httpClient.GetAsync($"{skylink}{(!string.IsNullOrEmpty(path) ? "/" : "")}{path.TrimStart('/')}").ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
             return response.Content;
         }
@@ -86,11 +86,11 @@ namespace Sia.Skynet
                 multiPartContent.Add(fileContent);
             }
 
-            var response = await _httpClient.PostAsync($"/skynet/skyfile?filename={fileName}", multiPartContent);
+            var response = await _httpClient.PostAsync($"/skynet/skyfile?filename={fileName}", multiPartContent).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
             return await JsonSerializer.DeserializeAsync<UploadResponse>(
-                await response.Content.ReadAsStreamAsync(),
-                _jsonSerializerOptions);
+                await response.Content.ReadAsStreamAsync().ConfigureAwait(false),
+                _jsonSerializerOptions).ConfigureAwait(false);
         }
     }
 }
