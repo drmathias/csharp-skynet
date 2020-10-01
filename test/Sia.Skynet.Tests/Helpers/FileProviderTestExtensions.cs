@@ -14,5 +14,14 @@ namespace Sia.Skynet.Tests.Helpers
             fileInfoMock.Setup(callTo => callTo.CreateReadStream()).Returns(new MemoryStream());
             return fileInfoMock;
         }
+
+        public static Mock<IFileInfo> SetupDirectory(this Mock<IFileInfo> fileInfoMock)
+        {
+            fileInfoMock.Setup(callTo => callTo.Name).Returns("src");
+            fileInfoMock.Setup(callTo => callTo.IsDirectory).Returns(true);
+            fileInfoMock.Setup(callTo => callTo.Exists).Returns(true);
+            fileInfoMock.Setup(callTo => callTo.CreateReadStream()).Returns(null as Stream);
+            return fileInfoMock;
+        }
     }
 }

@@ -3,7 +3,6 @@ using Moq.Protected;
 using NUnit.Framework;
 using Sia.Skynet.Tests.Helpers;
 using System;
-using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
@@ -17,7 +16,7 @@ namespace Sia.Skynet.Tests
         public void DownloadFile_SkylinkIsNull_ThrowsArgumentNullException()
         {
             // Arrange
-            using var httpClient = new HttpClient();
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK);
             var webPortalClient = new SkynetWebPortal(httpClient);
 
             // Act
@@ -31,7 +30,7 @@ namespace Sia.Skynet.Tests
         public void DownloadFile_PathIsNull_ThrowsArgumentNullException()
         {
             // Arrange
-            using var httpClient = new HttpClient();
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK);
             var webPortalClient = new SkynetWebPortal(httpClient);
 
             // Act
@@ -46,7 +45,7 @@ namespace Sia.Skynet.Tests
         public void DownloadFile_SkylinkIsNot46ByteString_ThrowsArgumentException(string skylink)
         {
             // Arrange
-            using var httpClient = new HttpClient();
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK);
             var webPortalClient = new SkynetWebPortal(httpClient);
 
             // Act
@@ -63,16 +62,8 @@ namespace Sia.Skynet.Tests
         public async Task DownloadFile_RequestUri_PathCorrect(string skylink, string path, string expectedSkypath)
         {
             // Arrange
-            var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict)
-                .SetupHttpResponse(HttpStatusCode.OK);
-
-            var httpClient = new HttpClient(handlerMock.Object)
-            {
-                BaseAddress = new System.Uri("https://siasky.net")
-            };
-
-            var x = Path.Combine(skylink, path);
-
+            var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict).SetupHttpResponse(HttpStatusCode.OK);
+            var httpClient = SetUpHttpClient(handlerMock.Object);
             var webPortalClient = new SkynetWebPortal(httpClient);
 
             // Act
@@ -97,14 +88,7 @@ namespace Sia.Skynet.Tests
         public void DownloadFile_NonSuccessfulResponse_ThrowsHttpRequestException()
         {
             // Arrange
-            var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict)
-                .SetupHttpResponse(HttpStatusCode.NotFound);
-
-            var httpClient = new HttpClient(handlerMock.Object)
-            {
-                BaseAddress = new Uri("https://siasky.net")
-            };
-
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.NotFound);
             var webPortalClient = new SkynetWebPortal(httpClient);
 
             // Act
@@ -115,17 +99,10 @@ namespace Sia.Skynet.Tests
         }
 
         [Test]
-        public void DownloadFile_SuccessfulResponse_DoesNotThrowException()
+        public void DownloadFile_SuccessfulResponse_ThrowsNothing()
         {
             // Arrange
-            var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict)
-                .SetupHttpResponse(HttpStatusCode.OK);
-
-            var httpClient = new HttpClient(handlerMock.Object)
-            {
-                BaseAddress = new Uri("https://siasky.net")
-            };
-
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK);
             var webPortalClient = new SkynetWebPortal(httpClient);
 
             // Act

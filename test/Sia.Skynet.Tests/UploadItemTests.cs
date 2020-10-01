@@ -1,7 +1,8 @@
 ﻿using Microsoft.Extensions.FileProviders;
 using Moq;
 using NUnit.Framework;
-using System;
+using Sia.Skynet.Tests.Helpers;
+using System.Net.Http.Headers;
 
 namespace Sia.Skynet.Tests
 {
@@ -14,25 +15,23 @@ namespace Sia.Skynet.Tests
             IFileInfo fileInfo = null;
 
             // Act
-            Action createUploadItem = () => new UploadItem(fileInfo);
+            void CreateUploadItem() => new UploadItem(fileInfo);
 
             // Assert
-            Assert.That(createUploadItem, Throws.ArgumentNullException);
+            Assert.That(CreateUploadItem, Throws.ArgumentNullException);
         }
 
         [Test]
-        public void Construction_FileInfoIsDirectory_ThrowsArgumentException()
+        public void Construction_FileInfoIsADirectory_ThrowsArgumentException()
         {
             // Arrange
-            var fileInfoMock = new Mock<IFileInfo>();
-            fileInfoMock.Setup(callTo => callTo.Name).Returns("foo.xml");
-            fileInfoMock.Setup(callTo => callTo.IsDirectory).Returns(true);
+            var fileInfoMock = new Mock<IFileInfo>().SetupDirectory();
 
             // Act
-            Action createUploadItem = () => new UploadItem(fileInfoMock.Object);
+            void CreateUploadItem() => new UploadItem(fileInfoMock.Object);
 
             // Assert
-            Assert.That(createUploadItem, Throws.ArgumentException);
+            Assert.That(CreateUploadItem, Throws.ArgumentException);
         }
 
         [Test]
@@ -42,10 +41,65 @@ namespace Sia.Skynet.Tests
             IFileInfo fileInfo = new NotFoundFileInfo("foo.xml");
 
             // Act
-            Action createUploadItem = () => new UploadItem(fileInfo);
+            void CreateUploadItem() => new UploadItem(fileInfo);
 
             // Assert
-            Assert.That(createUploadItem, Throws.ArgumentException);
+            Assert.That(CreateUploadItem, Throws.ArgumentException);
+        }
+
+        [Test]
+        public void Construction_FileInfoIsNotADirectory_ThrowsNothing()
+        {
+            // Arrange
+            var fileInfoMock = new Mock<IFileInfo>().SetupValidFile();
+
+            // Act
+            void CreateUploadItem() => new UploadItem(fileInfoMock.Object);
+
+            // Assert
+            Assert.That(CreateUploadItem, Throws.Nothing);
+        }
+
+        [Test]
+        public void Construction_FileInfo_IsSet()
+        {
+            // Arrange
+            var fileInfoMock = new Mock<IFileInfo>().SetupValidFile();
+            var fileInfo = fileInfoMock.Object;
+
+            // Act
+            var item = new UploadItem(fileInfo);
+
+            // Assert
+            Assert.That(item.FileInfo, Is.EqualTo(fileInfo));
+        }
+
+        [Test]
+        public void Construction_Skypath_IsSet()
+        {
+            // Arrange
+            var fileInfoMock = new Mock<IFileInfo>().SetupValidFile();
+            var skynetPath = "base/sky/net";
+
+            // Act
+            var item = new UploadItem(fileInfoMock.Object, skynetPath);
+
+            // Assert
+            Assert.That(item.SkynetPath, Is.EqualTo(skynetPath));
+        }
+
+        [Test]
+        public void Construction_ContentType_IsSet()
+        {
+            // Arrange
+            var fileInfoMock = new Mock<IFileInfo>().SetupValidFile();
+            var contentType = MediaTypeHeaderValue.Parse("text/csv");
+
+            // Act
+            var item = new UploadItem(fileInfoMock.Object, null, contentType);
+
+            // Assert
+            Assert.That(item.ContentType, Is.EqualTo(contentType));
         }
     }
 }

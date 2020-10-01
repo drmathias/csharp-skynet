@@ -1,7 +1,7 @@
 ﻿namespace Sia.Skynet
 {
     /// <summary>
-    /// Successful upload response from the webportal
+    /// Successful upload response from the Skynet webportal
     /// </summary>
     public class UploadResponse
     {
@@ -19,5 +19,36 @@
         /// The bitfield contains a version, an offset and a length in a heavily compressed and optimized format
         /// </summary>
         public ushort Bitfield { get; set; }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (obj == null || !(obj is UploadResponse other))
+            {
+                return false;
+            }
+
+            return Skylink == other.Skylink
+                && Merkleroot == other.Merkleroot
+                && Bitfield == other.Bitfield;
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            return Skylink.GetHashCode() - Merkleroot.GetHashCode() + Bitfield.GetHashCode();
+        }
+
+        /// <inheritdoc />
+        public static bool operator ==(UploadResponse a, UploadResponse b)
+        {
+            return a.Equals(b);
+        }
+
+        /// <inheritdoc />
+        public static bool operator !=(UploadResponse a, UploadResponse b)
+        {
+            return !a.Equals(b);
+        }
     }
 }
