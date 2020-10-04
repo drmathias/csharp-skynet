@@ -32,11 +32,10 @@ namespace Sia.Skynet
         }
 
         /// <inheritdoc/>
-        public async Task<HttpContent> DownloadFile(string skylink, string path = "")
+        public async Task<HttpContent> DownloadFile(Skylink skylink, string path = "")
         {
-            if (skylink is null) throw new ArgumentNullException(nameof(skylink));
             if (path is null) throw new ArgumentNullException(nameof(path));
-            if (skylink.Length != 46) throw new ArgumentException("Text must be 46 bytes long", nameof(skylink));
+            if (skylink == default) throw new ArgumentException("Non-default value must be supplied", nameof(skylink));
 
             var response = await _httpClient.GetAsync($"{skylink}{(!string.IsNullOrEmpty(path) ? "/" : "")}{path.TrimStart('/')}").ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
@@ -45,7 +44,7 @@ namespace Sia.Skynet
         }
 
         /// <inheritdoc />
-        public Task<UploadResponse> UploadFile(IFileProvider fileProvider, string filePath)
+        public Task<Skylink> UploadFile(IFileProvider fileProvider, string filePath)
         {
             if (fileProvider is null) throw new ArgumentNullException(nameof(fileProvider));
             if (filePath is null) throw new ArgumentNullException(nameof(filePath));
@@ -59,10 +58,10 @@ namespace Sia.Skynet
         }
 
         /// <inheritdoc />
-        public Task<UploadResponse> UploadFile(IFileInfo file) => UploadFile(new UploadItem(file));
+        public Task<Skylink> UploadFile(IFileInfo file) => UploadFile(new UploadItem(file));
 
         /// <inheritdoc />
-        public Task<UploadResponse> UploadFile(UploadItem item)
+        public Task<Skylink> UploadFile(UploadItem item)
         {
             if (item is null) throw new ArgumentNullException(nameof(item));
 
@@ -70,11 +69,11 @@ namespace Sia.Skynet
         }
 
         /// <inheritdoc/>
-        public Task<UploadResponse> UploadFiles(IEnumerable<IFileInfo> files, string fileName = "")
+        public Task<Skylink> UploadFiles(IEnumerable<IFileInfo> files, string fileName = "")
             => UploadFiles(files.Select(file => new UploadItem(file)).ToArray(), fileName);
 
         /// <inheritdoc/>
-        public async Task<UploadResponse> UploadFiles(IReadOnlyCollection<UploadItem> items, string fileName = "")
+        public async Task<Skylink> UploadFiles(IReadOnlyCollection<UploadItem> items, string fileName = "")
         {
             if (items is null) throw new ArgumentNullException(nameof(items));
             if (items.Count == 0) throw new ArgumentException("Sequence must not be empty", nameof(items));
@@ -100,13 +99,13 @@ namespace Sia.Skynet
             var response = await _httpClient.PostAsync($"/skynet/skyfile{(fileNameIsSet ? $"?filename={fileName}" : "")}", multiPartContent).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
-            return await JsonSerializer.DeserializeAsync<UploadResponse>(
-                await response.Content.ReadAsStreamAsync().ConfigureAwait(false),
-                _jsonSerializerOptions).ConfigureAwait(false);
+            var contentStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+            var uploadResponse = await JsonSerializer.DeserializeAsync<UploadResponse>(contentStream, _jsonSerializerOptions).ConfigureAwait(false);
+            return uploadResponse.ParseAndValidate();
         }
 
         /// <inheritdoc/>
-        public Task<UploadResponse> UploadDirectory(IFileProvider fileProvider, string directoryPath, bool recurse = false)
+        public Task<Skylink> UploadDirectory(IFileProvider fileProvider, string directoryPath, bool recurse = false)
         {
             if (fileProvider is null) throw new ArgumentNullException(nameof(fileProvider));
             if (directoryPath is null) throw new ArgumentNullException(nameof(directoryPath));

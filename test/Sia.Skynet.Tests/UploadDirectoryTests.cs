@@ -2,6 +2,7 @@ using Microsoft.Extensions.FileProviders;
 using NUnit.Framework;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -13,7 +14,7 @@ namespace Sia.Skynet.Tests
         public void UploadDirectory_FileProviderIsNull_ThrowsArgumentNullException()
         {
             // Arrange
-            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(SuccessfulUploadResponse));
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
             var webPortalClient = new SkynetWebPortal(httpClient);
 
             // Act
@@ -27,7 +28,7 @@ namespace Sia.Skynet.Tests
         public void UploadDirectory_FileProviderIsTypeNullFileProvider_ThrowsArgumentException()
         {
             // Arrange
-            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(SuccessfulUploadResponse));
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
             var webPortalClient = new SkynetWebPortal(httpClient);
 
             // Act
@@ -41,7 +42,7 @@ namespace Sia.Skynet.Tests
         public void UploadDirectory_DirectoryPathIsNull_ThrowsArgumentNullException()
         {
             // Arrange
-            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(SuccessfulUploadResponse));
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
             var webPortalClient = new SkynetWebPortal(httpClient);
             var fileProvider = SetUpFileProvider();
 
@@ -56,7 +57,7 @@ namespace Sia.Skynet.Tests
         public void UploadDirectory_DirectoryPathDoesNotExist_ThrowsDirectoryNotFoundException()
         {
             // Arrange
-            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(SuccessfulUploadResponse));
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
             var webPortalClient = new SkynetWebPortal(httpClient);
             var fileProvider = SetUpFileProvider();
 
@@ -68,10 +69,25 @@ namespace Sia.Skynet.Tests
         }
 
         [Test]
+        public void UploadDirectory_DirectoryPathExistsButInvalidUploadResponse_ThrowsHttpResponseException()
+        {
+            // Arrange
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(InvalidUploadResponse));
+            var webPortalClient = new SkynetWebPortal(httpClient);
+            var fileProvider = SetUpFileProvider();
+
+            // Act
+            Task UploadRequest() => webPortalClient.UploadDirectory(fileProvider, "");
+
+            // Assert
+            Assert.That(UploadRequest, Throws.TypeOf<HttpResponseException>());
+        }
+
+        [Test]
         public void UploadDirectory_DirectoryPathExists_ThrowsNothing()
         {
             // Arrange
-            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(SuccessfulUploadResponse));
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
             var webPortalClient = new SkynetWebPortal(httpClient);
             var fileProvider = SetUpFileProvider();
 
@@ -83,10 +99,10 @@ namespace Sia.Skynet.Tests
         }
 
         [Test]
-        public async Task UploadDirectory_DirectoryPathExists_ReturnsUploadResponse()
+        public async Task UploadDirectory_DirectoryPathExists_ReturnsSkylink()
         {
             // Arrange
-            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(SuccessfulUploadResponse));
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
             var webPortalClient = new SkynetWebPortal(httpClient);
             var fileProvider = SetUpFileProvider();
 
@@ -94,7 +110,7 @@ namespace Sia.Skynet.Tests
             var response = await webPortalClient.UploadDirectory(fileProvider, "");
 
             // Assert
-            Assert.That(response, Is.EqualTo(SuccessfulUploadResponse));
+            Assert.That(response, Is.EqualTo(Skylink.Parse(ValidUploadResponse.Skylink)));
         }
     }
 }

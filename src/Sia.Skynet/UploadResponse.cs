@@ -1,9 +1,12 @@
-﻿namespace Sia.Skynet
+﻿using System;
+using System.Net.Http;
+
+namespace Sia.Skynet
 {
     /// <summary>
     /// Successful upload response from the Skynet webportal
     /// </summary>
-    public class UploadResponse
+    internal class UploadResponse
     {
         /// <summary>
         /// Skylink to access the upload content
@@ -20,35 +23,12 @@
         /// </summary>
         public ushort Bitfield { get; set; }
 
-        /// <inheritdoc />
-        public override bool Equals(object obj)
+        internal Skylink ParseAndValidate()
         {
-            if (obj == null || !(obj is UploadResponse other))
-            {
-                return false;
-            }
-
-            return Skylink == other.Skylink
-                && Merkleroot == other.Merkleroot
-                && Bitfield == other.Bitfield;
-        }
-
-        /// <inheritdoc />
-        public override int GetHashCode()
-        {
-            return Skylink.GetHashCode() - Merkleroot.GetHashCode() + Bitfield.GetHashCode();
-        }
-
-        /// <inheritdoc />
-        public static bool operator ==(UploadResponse a, UploadResponse b)
-        {
-            return a.Equals(b);
-        }
-
-        /// <inheritdoc />
-        public static bool operator !=(UploadResponse a, UploadResponse b)
-        {
-            return !a.Equals(b);
+            if (!Skynet.Skylink.TryParse(Skylink, out var skylink)) throw new HttpResponseException("Unsupported Skylink format");
+            if (Bitfield != skylink.Bitfield || !Merkleroot.Equals(skylink.Merkleroot, StringComparison.OrdinalIgnoreCase))
+                throw new HttpResponseException("Incorrect values returned from Skynet portal");
+            return skylink;
         }
     }
 }

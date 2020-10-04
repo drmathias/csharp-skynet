@@ -17,18 +17,25 @@ namespace Sia.Skynet.Tests
 {
     public partial class WebPortalClientTests
     {
-        public UploadResponse SuccessfulUploadResponse { get; } = new UploadResponse
+        UploadResponse ValidUploadResponse { get; } = new UploadResponse
         {
-            Skylink = "_ARIHT3tFkMCk3wH9tVRu_wJCe9xOzkhWYfUjpOl9DDeqA",
-            Merkleroot = "TheQuickBrownFoxJumpsOverTheLazyDog",
-            Bitfield = 100
+            Skylink = "HAEqAkvXSQsyKMTq2mzbENmrD3ANPYLnp0PSEC0ZxX5Vyw",
+            Merkleroot = "2a024bd7490b3228c4eada6cdb10d9ab0f700d3d82e7a743d2102d19c57e55cb",
+            Bitfield = 284
+        };
+
+        UploadResponse InvalidUploadResponse { get; } = new UploadResponse
+        {
+            Skylink = "INVALIDXSQsyKMTq2mzbENmrD3ANPYLnp0PSEC0ZxX5Vyw",
+            Merkleroot = "2a024bd7490b3228c4eada6cdb10d9ab0f700d3d82e7a743d2102d19c57e55cb",
+            Bitfield = 284
         };
 
         [Test]
         public void UploadFiles_FileInfoEnumerableIsNull_ThrowsArgumentNullException()
         {
             // Arrange
-            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(SuccessfulUploadResponse));
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
             var webPortalClient = new SkynetWebPortal(httpClient);
             var fileProvider = SetUpFileProvider();
 
@@ -43,7 +50,7 @@ namespace Sia.Skynet.Tests
         public void UploadFiles_FileInfoEnumerableIsEmpty_ThrowsArgumentException()
         {
             // Arrange
-            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(SuccessfulUploadResponse));
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
             var webPortalClient = new SkynetWebPortal(httpClient);
             var fileProvider = SetUpFileProvider();
 
@@ -58,7 +65,7 @@ namespace Sia.Skynet.Tests
         public void UploadFiles_FileInfoEnumerableContainsNotFoundFileInfo_ThrowsArgumentException()
         {
             // Arrange
-            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(SuccessfulUploadResponse));
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
             var webPortalClient = new SkynetWebPortal(httpClient);
             var fileProvider = SetUpFileProvider();
 
@@ -73,7 +80,7 @@ namespace Sia.Skynet.Tests
         public void UploadFiles_FileInfoEnumerableContainsDirectory_ThrowsArgumentException()
         {
             // Arrange
-            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(SuccessfulUploadResponse));
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
             var webPortalClient = new SkynetWebPortal(httpClient);
             var fileMock = new Mock<IFileInfo>().SetupDirectory();
 
@@ -85,10 +92,25 @@ namespace Sia.Skynet.Tests
         }
 
         [Test]
+        public void UploadFiles_FileInfoEnumerableOnlyContainsValidFilesInvalidUploadResponse_ThrowsHttpResponseException()
+        {
+            // Arrange
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(InvalidUploadResponse));
+            var webPortalClient = new SkynetWebPortal(httpClient);
+            var fileMock = new Mock<IFileInfo>().SetupValidFile();
+
+            // Act
+            Task UploadRequest() => webPortalClient.UploadFiles(new IFileInfo[] { fileMock.Object });
+
+            // Assert
+            Assert.That(UploadRequest, Throws.TypeOf<HttpResponseException>());
+        }
+
+        [Test]
         public void UploadFiles_FileInfoEnumerableOnlyContainsValidFiles_ThrowsNothing()
         {
             // Arrange
-            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(SuccessfulUploadResponse));
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
             var webPortalClient = new SkynetWebPortal(httpClient);
             var fileMock = new Mock<IFileInfo>().SetupValidFile();
 
@@ -100,10 +122,10 @@ namespace Sia.Skynet.Tests
         }
 
         [Test]
-        public async Task UploadFiles_FileInfoEnumerableOnlyContainsValidFiles_ReturnsUploadResponse()
+        public async Task UploadFiles_FileInfoEnumerableOnlyContainsValidFiles_ReturnsSkylink()
         {
             // Arrange
-            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(SuccessfulUploadResponse));
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
             var webPortalClient = new SkynetWebPortal(httpClient);
             var fileMock = new Mock<IFileInfo>().SetupValidFile();
 
@@ -111,14 +133,14 @@ namespace Sia.Skynet.Tests
             var response = await webPortalClient.UploadFiles(new IFileInfo[] { fileMock.Object });
 
             // Assert
-            Assert.That(response, Is.EqualTo(SuccessfulUploadResponse));
+            Assert.That(response, Is.EqualTo(Skylink.Parse(ValidUploadResponse.Skylink)));
         }
 
         [Test]
         public void UploadFiles_ItemsAreNull_ThrowsArgumentNullException()
         {
             // Arrange
-            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(SuccessfulUploadResponse));
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
             var webPortalClient = new SkynetWebPortal(httpClient);
 
             // Act
@@ -134,7 +156,7 @@ namespace Sia.Skynet.Tests
         public void UploadFiles_FileNameIsInvalid_ThrowsArgumentException(string fileName)
         {
             // Arrange
-            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(SuccessfulUploadResponse));
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
             var webPortalClient = new SkynetWebPortal(httpClient);
 
             var fileMock = new Mock<IFileInfo>().SetupValidFile();
@@ -150,7 +172,7 @@ namespace Sia.Skynet.Tests
         public void UploadFiles_ItemsAreEmpty_ThrowsArgumentException()
         {
             // Arrange
-            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(SuccessfulUploadResponse));
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
             var webPortalClient = new SkynetWebPortal(httpClient);
 
             // Act
@@ -169,7 +191,7 @@ namespace Sia.Skynet.Tests
         public void UploadFiles_FileNameIsValid_ThrowsNothing(string fileName)
         {
             // Arrange
-            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(SuccessfulUploadResponse));
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
             var webPortalClient = new SkynetWebPortal(httpClient);
 
             var fileMock = new Mock<IFileInfo>().SetupValidFile();
@@ -187,7 +209,7 @@ namespace Sia.Skynet.Tests
         public async Task UploadFiles_RequestUri_WithoutFileName(string fileName)
         {
             // Arrange
-            var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict).SetupHttpResponse(HttpStatusCode.OK, JsonSerializer.Serialize(SuccessfulUploadResponse));
+            var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict).SetupHttpResponse(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
             var httpClient = SetUpHttpClient(handlerMock.Object);
             var webPortalClient = new SkynetWebPortal(httpClient);
             var fileMock = new Mock<IFileInfo>().SetupValidFile();
@@ -215,7 +237,7 @@ namespace Sia.Skynet.Tests
         public async Task UploadFiles_RequestUri_WithFileName(string fileName)
         {
             // Arrange
-            var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict).SetupHttpResponse(HttpStatusCode.OK, JsonSerializer.Serialize(SuccessfulUploadResponse));
+            var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict).SetupHttpResponse(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
             var httpClient = SetUpHttpClient(handlerMock.Object);
             var webPortalClient = new SkynetWebPortal(httpClient);
             var fileMock = new Mock<IFileInfo>().SetupValidFile();
@@ -254,10 +276,25 @@ namespace Sia.Skynet.Tests
         }
 
         [Test]
-        public void UploadFiles_SuccessfulResponse_ThrowsNothing()
+        public void UploadFiles_SuccessfulInvalidResponse_ThrowsHttpResponseException()
         {
             // Arrange
-            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(SuccessfulUploadResponse));
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(InvalidUploadResponse));
+            var webPortalClient = new SkynetWebPortal(httpClient);
+            var fileMock = new Mock<IFileInfo>().SetupValidFile();
+
+            // Act
+            Task UploadRequest() => webPortalClient.UploadFiles(new UploadItem[] { new UploadItem(fileMock.Object) });
+
+            // Assert
+            Assert.That(UploadRequest, Throws.TypeOf<HttpResponseException>());
+        }
+
+        [Test]
+        public void UploadFiles_SuccessfulValidResponse_ThrowsNothing()
+        {
+            // Arrange
+            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
             var webPortalClient = new SkynetWebPortal(httpClient);
             var fileMock = new Mock<IFileInfo>().SetupValidFile();
 

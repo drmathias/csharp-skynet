@@ -13,17 +13,17 @@ namespace Sia.Skynet.Tests
     public partial class WebPortalClientTests
     {
         [Test]
-        public void DownloadFile_SkylinkIsNull_ThrowsArgumentNullException()
+        public void DownloadFile_SkylinkIsDefault_ThrowsArgumentException()
         {
             // Arrange
             using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK);
             var webPortalClient = new SkynetWebPortal(httpClient);
 
             // Act
-            AsyncTestDelegate downloadRequest = () => webPortalClient.DownloadFile(null);
+            AsyncTestDelegate downloadRequest = () => webPortalClient.DownloadFile(default);
 
             // Assert
-            Assert.That(downloadRequest, Throws.ArgumentNullException);
+            Assert.That(downloadRequest, Throws.ArgumentException);
         }
 
         [Test]
@@ -34,25 +34,10 @@ namespace Sia.Skynet.Tests
             var webPortalClient = new SkynetWebPortal(httpClient);
 
             // Act
-            AsyncTestDelegate downloadRequest = () => webPortalClient.DownloadFile("AABFphGLnADQbFx3tXOQdtjKf0MvFzqZoDIqj_VaebkqcA", null);
+            AsyncTestDelegate downloadRequest = () => webPortalClient.DownloadFile(Skylink.Parse("AABFphGLnADQbFx3tXOQdtjKf0MvFzqZoDIqj_VaebkqcA"), null);
 
             // Assert
             Assert.That(downloadRequest, Throws.ArgumentNullException);
-        }
-
-        [TestCase("AABFphGLnADQbFx3tXOQdtjKf0MvFzqZoDIqj_Vaebkqc")]
-        [TestCase("AABFphGLnADQbFx3tXOQdtjKf0MvFzqZoDIqj_VaebkqcA4")]
-        public void DownloadFile_SkylinkIsNot46ByteString_ThrowsArgumentException(string skylink)
-        {
-            // Arrange
-            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK);
-            var webPortalClient = new SkynetWebPortal(httpClient);
-
-            // Act
-            AsyncTestDelegate downloadRequest = () => webPortalClient.DownloadFile(skylink, "");
-
-            // Assert
-            Assert.That(downloadRequest, Throws.ArgumentException);
         }
 
         [TestCase("_ARIHT3tFkMCk3wH9tVRu_wJCe9xOzkhWYfUjpOl9DDeqA", "", "_ARIHT3tFkMCk3wH9tVRu_wJCe9xOzkhWYfUjpOl9DDeqA")]
@@ -67,7 +52,7 @@ namespace Sia.Skynet.Tests
             var webPortalClient = new SkynetWebPortal(httpClient);
 
             // Act
-            await webPortalClient.DownloadFile(skylink, path);
+            await webPortalClient.DownloadFile(Skylink.Parse(skylink), path);
 
             // Assert
             var expectedUri = new Uri($"https://siasky.net/{expectedSkypath}");
@@ -92,7 +77,7 @@ namespace Sia.Skynet.Tests
             var webPortalClient = new SkynetWebPortal(httpClient);
 
             // Act
-            AsyncTestDelegate downloadRequest = () => webPortalClient.DownloadFile("_ARIHT3tFkMCk3wH9tVRu_wJCe9xOzkhWYfUjpOl9DDeqA");
+            AsyncTestDelegate downloadRequest = () => webPortalClient.DownloadFile(Skylink.Parse("_ARIHT3tFkMCk3wH9tVRu_wJCe9xOzkhWYfUjpOl9DDeqA"));
 
             // Assert
             Assert.That(downloadRequest, Throws.TypeOf<HttpRequestException>());
@@ -106,7 +91,7 @@ namespace Sia.Skynet.Tests
             var webPortalClient = new SkynetWebPortal(httpClient);
 
             // Act
-            AsyncTestDelegate downloadRequest = () => webPortalClient.DownloadFile("_ARIHT3tFkMCk3wH9tVRu_wJCe9xOzkhWYfUjpOl9DDeqA");
+            AsyncTestDelegate downloadRequest = () => webPortalClient.DownloadFile(Skylink.Parse("_ARIHT3tFkMCk3wH9tVRu_wJCe9xOzkhWYfUjpOl9DDeqA"));
 
             // Assert
             Assert.That(downloadRequest, Throws.Nothing);
