@@ -2,7 +2,7 @@
 
 A client for interacting with a Sia Skynet webportal.
 
-![.NET Core](https://github.com/drmathias/csharp-skynet/workflows/.NET%20Core/badge.svg?branch=master) [![NuGet](https://img.shields.io/nuget/v/Sia.Skynet)](https://www.nuget.org/packages/Sia.Skynet/)
+![.NET Core](https://github.com/drmathias/csharp-skynet/workflows/.NET%20Core/badge.svg?branch=master) [![NuGet](https://img.shields.io/nuget/v/Sia.Skynet)](https://www.nuget.org/packages/Sia.Skynet/) ![MIT License](https://img.shields.io/github/license/drmathias/csharp-skynet)
 
 ## Usage
 
@@ -17,7 +17,7 @@ var skynetWebportal = new SkynetWebPortal(httpClient);
 
 #### With Dependency Injection
 
-With `Microsoft.Extensions.DependencyInjection`, the client can easily be configured and set up to work with any Skynet webportal.
+When using `Microsoft.Extensions.DependencyInjection`, the client can easily be configured and set up to work with any Skynet webportal.
 
 ```csharp
 public void ConfigureServices(IServiceCollection services)
