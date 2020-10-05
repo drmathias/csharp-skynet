@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.FileProviders;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,7 +8,6 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Microsoft.Extensions.FileProviders;
 
 namespace Sia.Skynet
 {
@@ -78,8 +78,9 @@ namespace Sia.Skynet
             if (items is null) throw new ArgumentNullException(nameof(items));
             if (items.Count == 0) throw new ArgumentException("Sequence must not be empty", nameof(items));
 
-            var fileNameIsSet = !string.IsNullOrWhiteSpace(fileName);
-            if (fileNameIsSet && !Regex.IsMatch(fileName, @"^[0-9a-zA-Z-._]+$"))
+            if (string.IsNullOrWhiteSpace(fileName))
+                fileName = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd-HH-mm-ss");
+            else if (!Regex.IsMatch(fileName, @"^[0-9a-zA-Z-._]+$"))
                 throw new ArgumentException("File name can only contain alphanumeric characters, periods, underscores or hyphen-minus", nameof(fileName));
 
             using var multiPartContent = new MultipartFormDataContent();
@@ -96,7 +97,7 @@ namespace Sia.Skynet
                 multiPartContent.Add(fileContent);
             }
 
-            var response = await _httpClient.PostAsync($"/skynet/skyfile{(fileNameIsSet ? $"?filename={fileName}" : "")}", multiPartContent).ConfigureAwait(false);
+            var response = await _httpClient.PostAsync($"/skynet/skyfile?filename={fileName}", multiPartContent).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             var contentStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);

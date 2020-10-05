@@ -10,6 +10,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -218,7 +219,7 @@ namespace Sia.Skynet.Tests
             await webPortalClient.UploadFiles(new UploadItem[] { new UploadItem(fileMock.Object) }, fileName);
 
             // Assert
-            var expectedUri = new Uri($"https://siasky.net/skynet/skyfile");
+            var expectedUriPattern = @"^https:\/\/siasky\.net\/skynet\/skyfile\?filename=\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}$";
             handlerMock
                 .Protected()
                 .Verify(
@@ -226,7 +227,7 @@ namespace Sia.Skynet.Tests
                    Times.Exactly(1),
                    ItExpr.Is<HttpRequestMessage>(req =>
                       req.Method == HttpMethod.Post &&
-                      req.RequestUri == expectedUri
+                      Regex.IsMatch(req.RequestUri.OriginalString, expectedUriPattern)
                ),
                ItExpr.IsAny<CancellationToken>()
             );
