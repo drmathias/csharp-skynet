@@ -97,18 +97,32 @@ catch(IOException e)
 }
 ```
 
-#### Configuration
+#### File Configuration
 
-By default, the Skynet path of an uploaded file is set to the file name. This behaviour can be changed, by specifying the Skynet path on an `UploadItem`.
+By default, the Skynet path of an uploaded file is set to the file name. This behaviour can be changed, by specifying the Skynet path on an individual `UploadItem`.
 
 ```csharp
 new UploadItem(file, "/images/sunset.jpg")
 // file will become available at https://siasky.net/{skylink}/images/sunset.jpg
 ```
 
-For file uploads, the MIME type is automatically resolved based on the file extension. If you want to overwrite this behaviour, you can explicitly specify the MIME type on an `UploadItem`.
+For file uploads, the MIME type is automatically resolved based on the file extension. If you want to override this behaviour, you can explicitly specify the MIME type on an individual `UploadItem`.
 
 ```csharp
 new UploadItem(file, null, MediaTypeHeaderValue.Parse("image/gif"))
 // when downloaded, the Content-Type header will be set to image/gif
+```
+
+#### Portal Configuration
+
+`UploadOptions` and `MultiFileUploadOptions` can be used to configure how Skynet webportals handle requests for the upload.
+
+```csharp
+var options = new MultiFileUploadOptions
+{
+    FileName = "tag:siasky.net,2020-10-10:AABFphGLnADQbFx3tXOQdtjKf0MvFzqZoDIqj_VaebkqcA",
+    DefaultPath = "wwwroot/index.html"
+    DryRun = true
+};
+Skylink response = await skynetWebPortal.UploadDirectory(fileProvider, "directory/to/upload", recurse: true, options);
 ```
