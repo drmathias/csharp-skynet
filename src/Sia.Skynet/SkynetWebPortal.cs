@@ -6,7 +6,6 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Sia.Skynet
@@ -44,7 +43,7 @@ namespace Sia.Skynet
         }
 
         /// <inheritdoc />
-        public Task<Skylink> UploadFile(IFileProvider fileProvider, string filePath)
+        public Task<Skylink> UploadFile(IFileProvider fileProvider, string filePath, UploadOptions options = default)
         {
             if (fileProvider is null) throw new ArgumentNullException(nameof(fileProvider));
             if (filePath is null) throw new ArgumentNullException(nameof(filePath));
@@ -54,50 +53,21 @@ namespace Sia.Skynet
             var fileInfo = fileProvider.GetFileInfo(filePath);
             if (!fileInfo.Exists) throw new FileNotFoundException("Cannot find file at specified path", filePath);
 
-            return UploadFile(new UploadItem(fileInfo));
+            return UploadFile(new UploadItem(fileInfo), options);
         }
 
         /// <inheritdoc />
-        public Task<Skylink> UploadFile(IFileInfo file) => UploadFile(new UploadItem(file));
+        public Task<Skylink> UploadFile(IFileInfo file, UploadOptions options = default) => UploadFile(new UploadItem(file), options);
 
         /// <inheritdoc />
-        public Task<Skylink> UploadFile(UploadItem item)
+        public async Task<Skylink> UploadFile(UploadItem item, UploadOptions options = default)
         {
             if (item is null) throw new ArgumentNullException(nameof(item));
+            options ??= UploadOptions._default;
 
-            return UploadFiles(new UploadItem[] { item }, item.FileInfo.Name);
-        }
+            using var multiPartContent = new MultipartFormDataContent { CreateFileContent("file", item) };
 
-        /// <inheritdoc/>
-        public Task<Skylink> UploadFiles(IEnumerable<IFileInfo> files, string fileName = "")
-            => UploadFiles(files.Select(file => new UploadItem(file)).ToArray(), fileName);
-
-        /// <inheritdoc/>
-        public async Task<Skylink> UploadFiles(IReadOnlyCollection<UploadItem> items, string fileName = "")
-        {
-            if (items is null) throw new ArgumentNullException(nameof(items));
-            if (items.Count == 0) throw new ArgumentException("Sequence must not be empty", nameof(items));
-
-            if (string.IsNullOrWhiteSpace(fileName))
-                fileName = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd-HH-mm-ss");
-            else if (!Regex.IsMatch(fileName, @"^[0-9a-zA-Z-._]+$"))
-                throw new ArgumentException("File name can only contain alphanumeric characters, periods, underscores or hyphen-minus", nameof(fileName));
-
-            using var multiPartContent = new MultipartFormDataContent();
-            foreach (var item in items)
-            {
-                var fileStream = item.FileInfo.CreateReadStream();
-                var fileContent = new StreamContent(fileStream);
-                fileContent.Headers.ContentType = item.ContentType ?? MediaTypeHeaderValue.Parse(MimeTypes.GetMimeType(item.FileInfo.Name));
-                fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data")
-                {
-                    Name = "file",
-                    FileName = item.SkynetPath ?? item.FileInfo.Name
-                };
-                multiPartContent.Add(fileContent);
-            }
-
-            var response = await _httpClient.PostAsync($"/skynet/skyfile?filename={fileName}", multiPartContent).ConfigureAwait(false);
+            var response = await _httpClient.PostAsync($"/skynet/skyfile{options.ToQueryString()}", multiPartContent).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             var contentStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
@@ -106,7 +76,32 @@ namespace Sia.Skynet
         }
 
         /// <inheritdoc/>
-        public Task<Skylink> UploadDirectory(IFileProvider fileProvider, string directoryPath, bool recurse = false)
+        public Task<Skylink> UploadFiles(IEnumerable<IFileInfo> files, MultiFileUploadOptions options = default)
+            => UploadFiles(files.Select(file => new UploadItem(file)).ToArray(), options);
+
+        /// <inheritdoc/>
+        public async Task<Skylink> UploadFiles(IReadOnlyCollection<UploadItem> items, MultiFileUploadOptions options = default)
+        {
+            if (items is null) throw new ArgumentNullException(nameof(items));
+            if (items.Count == 0) throw new ArgumentException("Sequence must not be empty", nameof(items));
+            options ??= MultiFileUploadOptions._default;
+
+            using var multiPartContent = new MultipartFormDataContent();
+            foreach (var item in items)
+            {
+                multiPartContent.Add(CreateFileContent("files[]", item));
+            }
+
+            var response = await _httpClient.PostAsync($"/skynet/skyfile{options.ToQueryString()}", multiPartContent).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+
+            var contentStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+            var uploadResponse = await JsonSerializer.DeserializeAsync<UploadResponse>(contentStream, _jsonSerializerOptions).ConfigureAwait(false);
+            return uploadResponse.ParseAndValidate();
+        }
+
+        /// <inheritdoc/>
+        public Task<Skylink> UploadDirectory(IFileProvider fileProvider, string directoryPath, bool recurse = false, MultiFileUploadOptions options = default)
         {
             if (fileProvider is null) throw new ArgumentNullException(nameof(fileProvider));
             if (directoryPath is null) throw new ArgumentNullException(nameof(directoryPath));
@@ -117,7 +112,7 @@ namespace Sia.Skynet
             SearchFiles(directoryPath, files);
             var uploadItems = files.Select(file => new UploadItem(file.Item1, file.Item2)).ToArray();
 
-            return UploadFiles(uploadItems, directoryPath);
+            return UploadFiles(uploadItems, options);
 
             void SearchFiles(string path, ICollection<(IFileInfo, string)> fileList)
             {
@@ -129,7 +124,7 @@ namespace Sia.Skynet
                     var filePath = Path.Combine(path, fileInfo.Name);
                     if (!fileInfo.IsDirectory)
                     {
-                        var relativePath = filePath.Substring(directoryPath.Length + 1, filePath.Length - directoryPath.Length - 1);
+                        var relativePath = filePath.Substring(directoryPath.Length, filePath.Length - directoryPath.Length);
                         // format as unix-style path
                         fileList.Add((fileInfo, relativePath.Replace(Path.DirectorySeparatorChar, '/')));
                     }
@@ -139,6 +134,19 @@ namespace Sia.Skynet
                     }
                 }
             }
+        }
+
+        private StreamContent CreateFileContent(string fileFieldName, UploadItem item)
+        {
+            var fileStream = item.FileInfo.CreateReadStream();
+            var fileContent = new StreamContent(fileStream);
+            fileContent.Headers.ContentType = item.ContentType ?? MediaTypeHeaderValue.Parse(MimeTypes.GetMimeType(item.FileInfo.Name));
+            fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data")
+            {
+                Name = fileFieldName,
+                FileName = item.SkynetPath ?? item.FileInfo.Name
+            };
+            return fileContent;
         }
     }
 }

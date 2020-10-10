@@ -8,9 +8,9 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Sia.Skynet.Tests
+namespace Sia.Skynet.Tests.Portal
 {
-    public partial class WebPortalClientTests
+    public partial class SkynetWebPortalTests
     {
         [Test]
         public void DownloadFile_SkylinkIsDefault_ThrowsArgumentException()

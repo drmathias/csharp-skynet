@@ -1,16 +1,19 @@
+using Microsoft.Extensions.FileProviders;
+using Moq;
+using Moq.Protected;
+using NUnit.Framework;
+using Sia.Skynet.Tests.Helpers;
+using System;
 using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.FileProviders;
-using Moq;
-using NUnit.Framework;
-using Sia.Skynet.Tests.Helpers;
 
-namespace Sia.Skynet.Tests
+namespace Sia.Skynet.Tests.Portal
 {
-    public partial class WebPortalClientTests
+    public partial class SkynetWebPortalTests
     {
         [Test]
         public void UploadFile_FileProviderIsNull_ThrowsArgumentNullException()
@@ -281,6 +284,33 @@ namespace Sia.Skynet.Tests
 
             // Assert
             Assert.That(response, Is.EqualTo(Skylink.Parse(ValidUploadResponse.Skylink)));
+        }
+
+        [Test]
+        public async Task UploadFile_Request_CorrectUri()
+        {
+            // Arrange
+            var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict).SetupHttpResponse(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
+            var httpClient = SetUpHttpClient(handlerMock.Object);
+            var webPortalClient = new SkynetWebPortal(httpClient);
+            var fileMock = new Mock<IFileInfo>().SetupValidFile();
+
+            // Act
+            await webPortalClient.UploadFile(new UploadItem(fileMock.Object));
+
+            // Assert
+            var expectedUriWithoutQuery = "https://siasky.net/skynet/skyfile";
+            handlerMock
+                .Protected()
+                .Verify(
+                   "SendAsync",
+                   Times.Exactly(1),
+                   ItExpr.Is<HttpRequestMessage>(req =>
+                      req.Method == HttpMethod.Post &&
+                      req.RequestUri.GetLeftPart(UriPartial.Path) == expectedUriWithoutQuery
+               ),
+               ItExpr.IsAny<CancellationToken>()
+            );
         }
     }
 }

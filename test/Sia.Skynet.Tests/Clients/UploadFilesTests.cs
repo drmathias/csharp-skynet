@@ -1,5 +1,4 @@
-﻿using Dazinator.AspNet.Extensions.FileProviders;
-using Microsoft.Extensions.FileProviders;
+﻿using Microsoft.Extensions.FileProviders;
 using Moq;
 using Moq.Protected;
 using NUnit.Framework;
@@ -10,28 +9,13 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Sia.Skynet.Tests
+namespace Sia.Skynet.Tests.Portal
 {
-    public partial class WebPortalClientTests
+    public partial class SkynetWebPortalTests
     {
-        UploadResponse ValidUploadResponse { get; } = new UploadResponse
-        {
-            Skylink = "HAEqAkvXSQsyKMTq2mzbENmrD3ANPYLnp0PSEC0ZxX5Vyw",
-            Merkleroot = "2a024bd7490b3228c4eada6cdb10d9ab0f700d3d82e7a743d2102d19c57e55cb",
-            Bitfield = 284
-        };
-
-        UploadResponse InvalidUploadResponse { get; } = new UploadResponse
-        {
-            Skylink = "INVALIDXSQsyKMTq2mzbENmrD3ANPYLnp0PSEC0ZxX5Vyw",
-            Merkleroot = "2a024bd7490b3228c4eada6cdb10d9ab0f700d3d82e7a743d2102d19c57e55cb",
-            Bitfield = 284
-        };
-
         [Test]
         public void UploadFiles_FileInfoEnumerableIsNull_ThrowsArgumentNullException()
         {
@@ -151,24 +135,6 @@ namespace Sia.Skynet.Tests
             Assert.That(UploadRequest, Throws.ArgumentNullException);
         }
 
-        [TestCase("\\/:*?\"<>|")]
-        [TestCase("[]()^#%&!@:+={}'~`")]
-        [TestCase("foo bar.json")]
-        public void UploadFiles_FileNameIsInvalid_ThrowsArgumentException(string fileName)
-        {
-            // Arrange
-            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
-            var webPortalClient = new SkynetWebPortal(httpClient);
-
-            var fileMock = new Mock<IFileInfo>().SetupValidFile();
-
-            // Act
-            Task UploadRequest() => webPortalClient.UploadFiles(new UploadItem[] { new UploadItem(fileMock.Object) }, fileName);
-
-            // Assert
-            Assert.That(UploadRequest, Throws.ArgumentException);
-        }
-
         [Test]
         public void UploadFiles_ItemsAreEmpty_ThrowsArgumentException()
         {
@@ -181,84 +147,6 @@ namespace Sia.Skynet.Tests
 
             // Assert
             Assert.That(UploadRequest, Throws.ArgumentException);
-        }
-
-        [TestCase(null)]
-        [TestCase("")]
-        [TestCase("      ")]
-        [TestCase("1234")]
-        [TestCase("abc.png")]
-        [TestCase("-_-.txt")]
-        public void UploadFiles_FileNameIsValid_ThrowsNothing(string fileName)
-        {
-            // Arrange
-            using var httpClient = SetUpHttpClientThatReturns(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
-            var webPortalClient = new SkynetWebPortal(httpClient);
-
-            var fileMock = new Mock<IFileInfo>().SetupValidFile();
-
-            // Act
-            Task UploadRequest() => webPortalClient.UploadFiles(new UploadItem[] { new UploadItem(fileMock.Object) }, fileName);
-
-            // Assert
-            Assert.That(UploadRequest, Throws.Nothing);
-        }
-
-        [TestCase(null)]
-        [TestCase("")]
-        [TestCase("   ")]
-        public async Task UploadFiles_RequestUri_WithoutFileName(string fileName)
-        {
-            // Arrange
-            var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict).SetupHttpResponse(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
-            var httpClient = SetUpHttpClient(handlerMock.Object);
-            var webPortalClient = new SkynetWebPortal(httpClient);
-            var fileMock = new Mock<IFileInfo>().SetupValidFile();
-
-            // Act
-            await webPortalClient.UploadFiles(new UploadItem[] { new UploadItem(fileMock.Object) }, fileName);
-
-            // Assert
-            var expectedUriPattern = @"^https:\/\/siasky\.net\/skynet\/skyfile\?filename=\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}$";
-            handlerMock
-                .Protected()
-                .Verify(
-                   "SendAsync",
-                   Times.Exactly(1),
-                   ItExpr.Is<HttpRequestMessage>(req =>
-                      req.Method == HttpMethod.Post &&
-                      Regex.IsMatch(req.RequestUri.OriginalString, expectedUriPattern)
-               ),
-               ItExpr.IsAny<CancellationToken>()
-            );
-        }
-
-        [TestCase("2020-10-01")]
-        [TestCase("foo")]
-        public async Task UploadFiles_RequestUri_WithFileName(string fileName)
-        {
-            // Arrange
-            var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict).SetupHttpResponse(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
-            var httpClient = SetUpHttpClient(handlerMock.Object);
-            var webPortalClient = new SkynetWebPortal(httpClient);
-            var fileMock = new Mock<IFileInfo>().SetupValidFile();
-
-            // Act
-            await webPortalClient.UploadFiles(new UploadItem[] { new UploadItem(fileMock.Object) }, fileName);
-
-            // Assert
-            var expectedUri = new Uri($"https://siasky.net/skynet/skyfile?filename={fileName}");
-            handlerMock
-                .Protected()
-                .Verify(
-                   "SendAsync",
-                   Times.Exactly(1),
-                   ItExpr.Is<HttpRequestMessage>(req =>
-                      req.Method == HttpMethod.Post &&
-                      req.RequestUri == expectedUri
-               ),
-               ItExpr.IsAny<CancellationToken>()
-            );
         }
 
         [Test]
@@ -306,26 +194,31 @@ namespace Sia.Skynet.Tests
             Assert.That(UploadRequest, Throws.Nothing);
         }
 
-        private HttpClient SetUpHttpClient(HttpMessageHandler handler)
+        [Test]
+        public async Task UploadFiles_Request_CorrectUri()
         {
-            return new HttpClient(handler)
-            {
-                BaseAddress = new Uri("https://siasky.net")
-            };
-        }
+            // Arrange
+            var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict).SetupHttpResponse(HttpStatusCode.OK, JsonSerializer.Serialize(ValidUploadResponse));
+            var httpClient = SetUpHttpClient(handlerMock.Object);
+            var webPortalClient = new SkynetWebPortal(httpClient);
+            var fileMock = new Mock<IFileInfo>().SetupValidFile();
 
-        private HttpClient SetUpHttpClientThatReturns(HttpStatusCode statusCode, string content = "")
-        {
-            return SetUpHttpClient(new Mock<HttpMessageHandler>().SetupHttpResponse(statusCode, content).Object);
-        }
+            // Act
+            await webPortalClient.UploadFiles(new UploadItem[] { new UploadItem(fileMock.Object) });
 
-        private InMemoryFileProvider SetUpFileProvider()
-        {
-            var fileProvider = new InMemoryFileProvider();
-            fileProvider.Directory.AddFile("", new StringFileInfo("this file exists", "exists.txt"));
-            fileProvider.Directory.AddFile("", new StringFileInfo("file contents", "foo.txt"));
-            fileProvider.Directory.AddFile("", new StringFileInfo("{ \"another\":\"file\" }", "bar.json"));
-            return fileProvider;
+            // Assert
+            var expectedUriWithoutQuery = "https://siasky.net/skynet/skyfile";
+            handlerMock
+                .Protected()
+                .Verify(
+                   "SendAsync",
+                   Times.Exactly(1),
+                   ItExpr.Is<HttpRequestMessage>(req =>
+                      req.Method == HttpMethod.Post &&
+                      req.RequestUri.GetLeftPart(UriPartial.Path) == expectedUriWithoutQuery
+                   ),
+                   ItExpr.IsAny<CancellationToken>()
+            );
         }
     }
 }

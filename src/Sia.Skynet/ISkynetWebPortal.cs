@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Microsoft.Extensions.FileProviders;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Microsoft.Extensions.FileProviders;
 
 namespace Sia.Skynet
 {
@@ -28,6 +28,7 @@ namespace Sia.Skynet
         /// </summary>
         /// <param name="fileProvider">Provider to access the file</param>
         /// <param name="filePath">Relative path to retrieve the file</param>
+        /// <param name="options">Additional parameters that can be passed to the webportal</param>
         /// <returns>The Skylink that can be used to access the content</returns>
         /// <exception cref="ArgumentNullException">Either <paramref name="fileProvider"/> or <paramref name="filePath"/> is a null reference</exception>
         /// <exception cref="ArgumentException"><paramref name="fileProvider"/> is an instance of <see cref="NullFileProvider"/> or <paramref name="filePath"/> is empty</exception>
@@ -35,56 +36,58 @@ namespace Sia.Skynet
         /// <exception cref="IOException">Something went wrong when accessing the files</exception>
         /// <exception cref="FileNotFoundException">File provider does not contain file at specified path</exception>
         /// <exception cref="HttpResponseException">The response from the portal is invalid</exception>
-        Task<Skylink> UploadFile(IFileProvider fileProvider, string filePath);
+        Task<Skylink> UploadFile(IFileProvider fileProvider, string filePath, UploadOptions options = default);
 
         /// <summary>
         /// Uploads a file to Sia Skynet
         /// </summary>
         /// <param name="file">The file to upload</param>
+        /// <param name="options">Additional parameters that can be passed to the webportal</param>
         /// <returns>The Skylink that can be used to access the content</returns>
         /// <exception cref="ArgumentNullException"><paramref name="file"/> is a null reference</exception>
         /// <exception cref="ArgumentException"><paramref name="file"/> represents a directory or is of type <see cref="NotFoundFileInfo"/></exception>
         /// <exception cref="HttpRequestException">The HTTP request was not successful</exception>
         /// <exception cref="IOException">Something went wrong when accessing the files</exception>
         /// <exception cref="HttpResponseException">The response from the portal is invalid</exception>
-        Task<Skylink> UploadFile(IFileInfo file);
+        Task<Skylink> UploadFile(IFileInfo file, UploadOptions options = default);
 
         /// <summary>
         /// Uploads a file to Sia Skynet
         /// </summary>
         /// <param name="item">The item to upload</param>
+        /// <param name="options">Additional parameters that can be passed to the webportal</param>
         /// <returns>The Skylink that can be used to access the content</returns>
         /// <exception cref="ArgumentNullException"><paramref name="item"/> is a null reference</exception>
         /// <exception cref="HttpRequestException">The HTTP request was not successful</exception>
         /// <exception cref="IOException">Something went wrong when accessing the files</exception>
         /// <exception cref="HttpResponseException">The response from the portal is invalid</exception>
-        Task<Skylink> UploadFile(UploadItem item);
+        Task<Skylink> UploadFile(UploadItem item, UploadOptions options = default);
 
         /// <summary>
         /// Uploads files to Sia Skynet
         /// </summary>
         /// <param name="files">The files to upload</param>
-        /// <param name="fileName">Name of the file upload, which gets encoded into the metadata, causing the skylink to change</param>
+        /// <param name="options">Additional parameters that can be passed to the webportal</param>
         /// <returns>The Skylink that can be used to access the content</returns>
         /// <exception cref="ArgumentNullException"><paramref name="files"/> is a null reference</exception>
-        /// <exception cref="ArgumentException"><paramref name="fileName"/> contains invalid characters, <paramref name="files"/> is empty, or one or more <paramref name="files"/> represents a directory or is of type <see cref="NotFoundFileInfo"/></exception>
+        /// <exception cref="ArgumentException"><paramref name="files"/> is empty, or one or more <paramref name="files"/> represents a directory or is of type <see cref="NotFoundFileInfo"/></exception>
         /// <exception cref="HttpRequestException">The HTTP request was not successful</exception>
         /// <exception cref="IOException">Something went wrong when accessing the files</exception>
         /// <exception cref="HttpResponseException">The response from the portal is invalid</exception>
-        Task<Skylink> UploadFiles(IEnumerable<IFileInfo> files, string fileName = "");
+        Task<Skylink> UploadFiles(IEnumerable<IFileInfo> files, MultiFileUploadOptions options = default);
 
         /// <summary>
         /// Uploads files to Sia Skynet
         /// </summary>
         /// <param name="items">The items to upload</param>
-        /// <param name="fileName">Name of the file upload, which gets encoded into the metadata, causing the skylink to change</param>
+        /// <param name="options">Additional parameters that can be passed to the webportal</param>
         /// <returns>The Skylink that can be used to access the content</returns>
         /// <exception cref="ArgumentNullException"><paramref name="items"/> is a null reference</exception>
-        /// <exception cref="ArgumentException"><paramref name="fileName"/> contains invalid characters, or <paramref name="items"/> is empty</exception>
+        /// <exception cref="ArgumentException"><paramref name="items"/> is empty</exception>
         /// <exception cref="HttpRequestException">The HTTP request was not successful</exception>
         /// <exception cref="IOException">Something went wrong when accessing the files</exception>
         /// <exception cref="HttpResponseException">The response from the portal is invalid</exception>
-        Task<Skylink> UploadFiles(IReadOnlyCollection<UploadItem> items, string fileName = "");
+        Task<Skylink> UploadFiles(IReadOnlyCollection<UploadItem> items, MultiFileUploadOptions options = default);
 
         /// <summary>
         /// Uploads a directory to Sia Skynet
@@ -92,6 +95,7 @@ namespace Sia.Skynet
         /// <param name="fileProvider">Provider to access the file</param>
         /// <param name="directoryPath">Relative path to the directory</param>
         /// <param name="recurse">Whether to upload subdirectories</param>
+        /// <param name="options">Additional parameters that can be passed to the webportal</param>
         /// <returns>The Skylink that can be used to access the content</returns>
         /// <exception cref="ArgumentNullException">Either <paramref name="fileProvider"/> or <paramref name="directoryPath"/> is a null reference</exception>
         /// <exception cref="ArgumentException"><paramref name="fileProvider"/> is an instance of <see cref="NullFileProvider"/></exception>
@@ -99,6 +103,6 @@ namespace Sia.Skynet
         /// <exception cref="IOException">Something went wrong when accessing the files</exception>
         /// <exception cref="DirectoryNotFoundException">File provider does not contain directory at specified path</exception>
         /// <exception cref="HttpResponseException">The response from the portal is invalid</exception>
-        Task<Skylink> UploadDirectory(IFileProvider fileProvider, string directoryPath, bool recurse = false);
+        Task<Skylink> UploadDirectory(IFileProvider fileProvider, string directoryPath, bool recurse = false, MultiFileUploadOptions options = default);
     }
 }

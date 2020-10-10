@@ -61,6 +61,32 @@ namespace Sia.Skynet.Tests
         }
 
         [Test]
+        public void Construction_InalidSiaPath_ThrowsArgumentException()
+        {
+            // Arrange
+            var fileInfoMock = new Mock<IFileInfo>().SetupValidFile();
+
+            // Act
+            void CreateUploadItem() => new UploadItem(fileInfoMock.Object, "../home");
+
+            // Assert
+            Assert.That(CreateUploadItem, Throws.ArgumentException);
+        }
+
+        [Test]
+        public void Construction_ValidSiaPath_ThrowsNothing()
+        {
+            // Arrange
+            var fileInfoMock = new Mock<IFileInfo>().SetupValidFile();
+
+            // Act
+            void CreateUploadItem() => new UploadItem(fileInfoMock.Object, "ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz0123456789-_");
+
+            // Assert
+            Assert.That(CreateUploadItem, Throws.Nothing);
+        }
+
+        [Test]
         public void Construction_FileInfo_IsSet()
         {
             // Arrange
@@ -75,7 +101,7 @@ namespace Sia.Skynet.Tests
         }
 
         [Test]
-        public void Construction_Skypath_IsSet()
+        public void Construction_SkynetPath_IsSet()
         {
             // Arrange
             var fileInfoMock = new Mock<IFileInfo>().SetupValidFile();
@@ -100,6 +126,34 @@ namespace Sia.Skynet.Tests
 
             // Assert
             Assert.That(item.ContentType, Is.EqualTo(contentType));
+        }
+
+        [Test]
+        public void SkynetPath_InvalidSiaPath_ThrowsArgumentException()
+        {
+            // Arrange
+            var fileInfoMock = new Mock<IFileInfo>().SetupValidFile();
+            var uploadItem = new UploadItem(fileInfoMock.Object);
+
+            // Act
+            void SetSkynetPath() => uploadItem.SkynetPath = "../home";
+
+            // Assert
+            Assert.That(SetSkynetPath, Throws.ArgumentException);
+        }
+
+        [Test]
+        public void SkynetPath_ValidSiaPath_ThrowsNothing()
+        {
+            // Arrange
+            var fileInfoMock = new Mock<IFileInfo>().SetupValidFile();
+            var uploadItem = new UploadItem(fileInfoMock.Object);
+
+            // Act
+            void SetSkynetPath() => uploadItem.SkynetPath = "ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz0123456789-_";
+
+            // Assert
+            Assert.That(SetSkynetPath, Throws.Nothing);
         }
     }
 }

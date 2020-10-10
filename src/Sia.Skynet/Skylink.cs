@@ -1,7 +1,7 @@
+using Medallion;
 using System;
 using System.Linq;
 using System.Numerics;
-using Medallion;
 
 namespace Sia.Skynet
 {
@@ -23,8 +23,6 @@ namespace Sia.Skynet
         /// <summary>
         /// Creates a Skylink from a Bitfield and a Merkle root
         /// </summary>
-        /// <param name="bitfield"></param>
-        /// <param name="merkleroot"></param>
         public Skylink(Bitfield bitfield, byte[] merkleroot)
         {
             Bitfield = bitfield;
