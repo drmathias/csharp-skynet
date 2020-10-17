@@ -119,7 +119,7 @@ namespace Sia.Skynet
                 var directoryContents = fileProvider.GetDirectoryContents(path);
                 if (!directoryContents.Exists) throw new DirectoryNotFoundException($"Cannot find directory at path: {path}");
 
-                foreach (var fileInfo in directoryContents)
+                foreach (var fileInfo in directoryContents.OrderBy(file => file.Name))
                 {
                     var filePath = Path.Combine(path, fileInfo.Name);
                     if (!fileInfo.IsDirectory)
