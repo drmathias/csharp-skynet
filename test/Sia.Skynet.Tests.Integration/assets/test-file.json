@@ -4,7 +4,8 @@
       "name": "Azure",
       "company": "Microsoft",
       "services": [
-        "Blob Storage", "File Storage"
+        "Blob Storage",
+        "File Storage"
       ]
     },
     {

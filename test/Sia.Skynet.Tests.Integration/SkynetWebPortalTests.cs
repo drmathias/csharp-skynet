@@ -13,7 +13,7 @@ namespace Sia.Skynet.Tests.Integration
 {
     public class SkynetWebPortalTests
     {
-        private SkynetWebPortal _skynetWebportal;
+        private SkynetWebPortal _skynetWebPortal;
 
         [OneTimeSetUp]
         public void OneTimeSetUp()
@@ -22,39 +22,21 @@ namespace Sia.Skynet.Tests.Integration
             {
                 BaseAddress = new Uri("https://skynet.developmomentum.com")
             };
-            _skynetWebportal = new SkynetWebPortal(httpClient);
+            _skynetWebPortal = new SkynetWebPortal(httpClient);
         }
 
         [Test]
         public async Task DownloadFile_FromFileProvider_ExpectedMetadata()
         {
             // Arrange
-            var skylink = Skylink.Parse("AAD9U4JqM2w6gHJZ2_tHIsnWD5YoxUVrjbAZnsVGJl2xEg");
+            var skylink = Skylink.Parse("AAAox419FTqN04JIo3urNNtyxwY9i61cZVnbwNlhGluwOQ");
 
             // Act
-            var content = await _skynetWebportal.DownloadFile(skylink);
+            var content = await _skynetWebPortal.DownloadFile(skylink);
             var result = await content.ReadAsStringAsync();
 
             // Assert
-            Assert.That(result ==
-@"{
-  ""records"": [
-    {
-      ""name"": ""Azure"",
-      ""company"": ""Microsoft"",
-      ""services"": [
-        ""Blob Storage"", ""File Storage""
-      ]
-    },
-    {
-      ""name"": ""Sia"",
-      ""company"": ""Nebulous"",
-      ""services"": [
-        ""Skynet""
-      ]
-    }
-  ]
-}");
+            Assert.That(result == "This file is embedded into the assembly");
         }
 
         [Test]
@@ -64,10 +46,10 @@ namespace Sia.Skynet.Tests.Integration
             var fileProvider = new EmbeddedFileProvider(Assembly.GetExecutingAssembly());
 
             // Act
-            var skylink = await _skynetWebportal.UploadFile(fileProvider, "assets/test-file.json");
+            var skylink = await _skynetWebPortal.UploadFile(fileProvider, "assets/test-file.txt");
 
             // Assert
-            Assert.That(skylink.ToString() == "AAD9U4JqM2w6gHJZ2_tHIsnWD5YoxUVrjbAZnsVGJl2xEg");
+            Assert.That(skylink.ToString() == "AAAox419FTqN04JIo3urNNtyxwY9i61cZVnbwNlhGluwOQ");
         }
 
         [Test]
@@ -77,10 +59,10 @@ namespace Sia.Skynet.Tests.Integration
             var file = new PhysicalFileInfo(new FileInfo("assets/test-file.json"));
 
             // Act
-            var skylink = await _skynetWebportal.UploadFile(file);
+            var skylink = await _skynetWebPortal.UploadFile(file);
 
             // Assert
-            Assert.That(skylink.ToString() == "AAD9U4JqM2w6gHJZ2_tHIsnWD5YoxUVrjbAZnsVGJl2xEg");
+            Assert.That(skylink.ToString() == "AACcDsB0hiRosExg1JlERWIJP5MVYiAS2F5EkU8VLtlPrA");
         }
 
         [Test]
@@ -91,10 +73,10 @@ namespace Sia.Skynet.Tests.Integration
             var item = new UploadItem(file, skynetPath: "custom/directory/test-file.json");
 
             // Act
-            var skylink = await _skynetWebportal.UploadFile(item);
+            var skylink = await _skynetWebPortal.UploadFile(item);
 
             // Assert
-            Assert.That(skylink.ToString() == "AADjgvkWmUopRD27MzGB-dkf6ToCbYWRIB6oKRPG3eDkOQ");
+            Assert.That(skylink.ToString() == "AADoxsbpEVLgFTMco_fS3eiTAvtKx5WCfll5wqHEfyksrQ");
         }
 
         [Test]
@@ -105,10 +87,10 @@ namespace Sia.Skynet.Tests.Integration
             var item = new UploadItem(file, contentType: new MediaTypeHeaderValue("text/xml"));
 
             // Act
-            var skylink = await _skynetWebportal.UploadFile(item);
+            var skylink = await _skynetWebPortal.UploadFile(item);
 
             // Assert
-            Assert.That(skylink.ToString() == "AAC6nk1SZNyEKR8hb1CyCsJp9mQv5l0BZ_jcYpGY1qRTzg");
+            Assert.That(skylink.ToString() == "AABDI5UpS0B8tuxKBOiwwKEULV7V4Ln_aBdPPFLWpTlFhA");
         }
 
         [Test]
@@ -124,10 +106,10 @@ namespace Sia.Skynet.Tests.Integration
             var options = new MultiFileUploadOptions { FileName = "integration-tests" };
 
             // Act
-            var skylink = await _skynetWebportal.UploadFiles(files, options);
+            var skylink = await _skynetWebPortal.UploadFiles(files, options);
 
             // Assert
-            Assert.That(skylink.ToString() == "AABfotl8L9C3D6p49quMrRPmLUzRZCs1vwiNJFCaqon9rQ");
+            Assert.That(skylink.ToString() == "AACVmVl_KyZTaaS2cdGANxedYtOGJu13urqfc_yQl5jL8w");
         }
 
         [Test]
@@ -146,10 +128,10 @@ namespace Sia.Skynet.Tests.Integration
             var options = new MultiFileUploadOptions { FileName = "integration-tests" };
 
             // Act
-            var skylink = await _skynetWebportal.UploadFiles(items, options);
+            var skylink = await _skynetWebPortal.UploadFiles(items, options);
 
             // Assert
-            Assert.That(skylink.ToString() == "AAB-nwY_T0ZxxZWzYBdtrajGysRbTW4TAKfiMuZjWyaRkA");
+            Assert.That(skylink.ToString() == "AADPKdb7S7E_Uvdy8kjeA4OoPG5HgTZgismv0Ys_BBLgrQ");
         }
 
         [Test]
@@ -168,10 +150,10 @@ namespace Sia.Skynet.Tests.Integration
             var options = new MultiFileUploadOptions { FileName = "integration-tests" };
 
             // Act
-            var skylink = await _skynetWebportal.UploadFiles(items, options);
+            var skylink = await _skynetWebPortal.UploadFiles(items, options);
 
             // Assert
-            Assert.That(skylink.ToString() == "AABt2lrTRNAJoLehzTVdwy5JeRzPUiWMRIJpOm_Fsq3_JA");
+            Assert.That(skylink.ToString() == "AADOj5s9MWkkim6Py9suD0DDZWzddCB3ep8C0Vr9W8w9DQ");
         }
 
         [Test]
@@ -186,7 +168,7 @@ namespace Sia.Skynet.Tests.Integration
             var options = new MultiFileUploadOptions { FileName = "integration-tests" };
 
             // Act
-            var skylink = await _skynetWebportal.UploadDirectory(fileProvider, "", false, options);
+            var skylink = await _skynetWebPortal.UploadDirectory(fileProvider, "", false, options);
 
             // Assert
             Assert.That(skylink.ToString() == "AABU1QK8EVh5O47wX2qYyXQrzgRu7sl_ty5lWluhVzEFCw");
@@ -204,7 +186,7 @@ namespace Sia.Skynet.Tests.Integration
             var options = new MultiFileUploadOptions { FileName = "integration-tests" };
 
             // Act
-            var skylink = await _skynetWebportal.UploadDirectory(fileProvider, "", true, options);
+            var skylink = await _skynetWebPortal.UploadDirectory(fileProvider, "", true, options);
 
             // Assert
             Assert.That(skylink.ToString() == "AACggsc6nihGIi-1rOhJbx2TJi3W30OgdQKPNr_9Kgfeog");
