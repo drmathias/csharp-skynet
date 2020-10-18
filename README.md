@@ -12,7 +12,7 @@ This library targets [.NET Standard 2.0](https://docs.microsoft.com/en-us/dotnet
 
 ```csharp
 using var httpClient = new HttpClient { BaseAddress = new Uri("https://siasky.net") };
-var skynetWebportal = new SkynetWebPortal(httpClient);
+var skynetWebPortal = new SkynetWebPortal(httpClient);
 ```
 
 #### With Dependency Injection
@@ -37,7 +37,7 @@ Files can be downloaded from a Sia Skynet webportal, by providing a Skylink and 
 try
 {
     var skylink = Skylink.Parse("AABFphGLnADQbFx3tXOQdtjKf0MvFzqZoDIqj_VaebkqcA");
-    HttpContent response = await skynetWebportal.DownloadFile(skylink);
+    HttpContent response = await skynetWebPortal.DownloadFile(skylink);
 }
 catch(HttpException e)
 {
@@ -102,14 +102,14 @@ catch(IOException e)
 By default, the Skynet path of an uploaded file is set to the file name. This behaviour can be changed, by specifying the Skynet path on an individual `UploadItem`.
 
 ```csharp
-new UploadItem(file, "/images/sunset.jpg")
+new UploadItem(file, "/images/sunset.jpg");
 // file will become available at https://siasky.net/{skylink}/images/sunset.jpg
 ```
 
 For file uploads, the MIME type is automatically resolved based on the file extension. If you want to override this behaviour, you can explicitly specify the MIME type on an individual `UploadItem`.
 
 ```csharp
-new UploadItem(file, null, MediaTypeHeaderValue.Parse("image/gif"))
+new UploadItem(file, null, MediaTypeHeaderValue.Parse("image/gif"));
 // when downloaded, the Content-Type header will be set to image/gif
 ```
 
